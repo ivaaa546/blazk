@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { body } = require("express-validator");
 const usuarioController = require("../controllers/usuarioController");
+const verificarToken = require("../middleware/authMiddleware");
+
 
 // Obtener usuarios
-router.get("/", usuarioController.obtenerUsuarios);
+router.get("/",verificarToken, usuarioController.obtenerUsuarios);
 
 // Crear usuario
 router.post(
@@ -18,13 +20,13 @@ router.post(
 );
 
 // Ruta para login
-router.post("/login", usuarioController.loginUsuario);
+router.post("/login", verificarToken, usuarioController.loginUsuario);
 
 // Actualizar y eliminar
-router.put("/:id", usuarioController.editarUsuario);
+router.put("/:id", verificarToken, usuarioController.editarUsuario);
 
 //Eliminar
-router.delete("/:id", usuarioController.eliminarUsuario);
+router.delete("/:id", verificarToken,usuarioController.eliminarUsuario);
 
 module.exports = router;
 
