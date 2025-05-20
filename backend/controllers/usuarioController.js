@@ -1,13 +1,12 @@
-const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const UsuarioModel = require("../models/usuarioModel");
 
 // Obtener todos los usuarios
 exports.obtenerUsuarios = (req, res) => {
-  db.query("SELECT * FROM usuarios", (err, resultados) => {
+  UsuarioModel.obtenerTodos((err, usuarios) => {
     if (err) return res.status(500).json({ error: "Error al obtener usuarios" });
-    res.json(resultados);
+    res.json(usuarios);
   });
 };
 
@@ -21,15 +20,14 @@ exports.crearUsuario = async (req, res) => {
 
   try {
     const contraseñaHash = await bcrypt.hash(contraseña, 10);
-    const sql = "INSERT INTO usuarios (nombre, correo, contraseña) VALUES (?, ?, ?)";
-    db.query(sql, [nombre, correo, contraseñaHash], (err, resultado) => {
+    UsuarioModel.crear(nombre, correo, contraseñaHash, (err, insertId) => {
       if (err) {
         if (err.code === "ER_DUP_ENTRY") {
           return res.status(409).json({ error: "El correo ya está registrado" });
         }
         return res.status(500).json({ error: "Error al crear el usuario" });
       }
-      res.json({ mensaje: "Usuario creado correctamente", id: resultado.insertId });
+      res.json({ mensaje: "Usuario creado correctamente", id: insertId });
     });
   } catch (err) {
     res.status(500).json({ error: "Error al encriptar la contraseña" });
@@ -37,25 +35,29 @@ exports.crearUsuario = async (req, res) => {
 };
 
 // Editar un usuario
-exports.editarUsuario = (req, res) => {
+exports.editarUsuario = async (req, res) => {
   const { id } = req.params;
   const { nombre, correo, contraseña } = req.body;
 
-  const sql = "UPDATE usuarios SET nombre = ?, correo = ?, contraseña = ? WHERE id = ?";
-  db.query(sql, [nombre, correo, contraseña, id], (err, resultado) => {
-    if (err) return res.status(500).json({ error: "Error al actualizar el usuario" });
-    if (resultado.affectedRows === 0) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
-    res.json({ mensaje: "Usuario actualizado correctamente" });
-  });
+  try {
+    const contraseñaHash = await bcrypt.hash(contraseña, 10);
+    UsuarioModel.actualizar(id, nombre, correo, contraseñaHash, (err, resultado) => {
+      if (err) return res.status(500).json({ error: "Error al actualizar el usuario" });
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      res.json({ mensaje: "Usuario actualizado correctamente" });
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error al encriptar la contraseña" });
+  }
 };
 
 // Eliminar un usuario
 exports.eliminarUsuario = (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM usuarios WHERE id = ?", [id], (err, resultado) => {
+  UsuarioModel.eliminar(id, (err, resultado) => {
     if (err) return res.status(500).json({ error: "Error al eliminar el usuario" });
     if (resultado.affectedRows === 0) {
       return res.status(404).json({ error: "Usuario no encontrado" });
@@ -64,6 +66,7 @@ exports.eliminarUsuario = (req, res) => {
   });
 };
 
+// Login de usuario
 exports.loginUsuario = (req, res) => {
   const { correo, contraseña } = req.body;
 
@@ -71,12 +74,10 @@ exports.loginUsuario = (req, res) => {
     return res.status(400).json({ error: "Correo y contraseña requeridos" });
   }
 
-  const sql = "SELECT * FROM usuarios WHERE correo = ?";
-  db.query(sql, [correo], async (err, resultados) => {
+  UsuarioModel.obtenerPorCorreo(correo, async (err, usuario) => {
     if (err) return res.status(500).json({ error: "Error al buscar usuario" });
-    if (resultados.length === 0) return res.status(401).json({ error: "Credenciales inválidas" });
+    if (!usuario) return res.status(401).json({ error: "Credenciales inválidas" });
 
-    const usuario = resultados[0];
     const match = await bcrypt.compare(contraseña, usuario.contraseña);
     if (!match) return res.status(401).json({ error: "Credenciales inválidas" });
 

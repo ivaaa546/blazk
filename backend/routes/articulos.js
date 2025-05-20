@@ -4,7 +4,7 @@ const articuloController = require("../controllers/articuloController");
 const verificarToken = require("../middleware/authMiddleware");
 
 // Obtener todos los artículos
-router.get("/", verificarToken,articuloController.obtenerArticulos);
+router.get("/", articuloController.obtenerArticulos);
 
 // Obtener un artículo por ID
 router.get("/:id", verificarToken,articuloController.obtenerArticuloPorId);

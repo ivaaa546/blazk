@@ -6,7 +6,7 @@ const verificarToken = require("../middleware/authMiddleware");
 
 
 // Obtener usuarios
-router.get("/",verificarToken, usuarioController.obtenerUsuarios);
+router.get("/", verificarToken, usuarioController.obtenerUsuarios);
 
 // Crear usuario
 router.post(
@@ -23,7 +23,7 @@ router.post(
 router.post("/login", verificarToken, usuarioController.loginUsuario);
 
 // Actualizar y eliminar
-router.put("/:id", verificarToken, usuarioController.editarUsuario);
+router.put("/:id",verificarToken, usuarioController.editarUsuario);
 
 //Eliminar
 router.delete("/:id", verificarToken,usuarioController.eliminarUsuario);

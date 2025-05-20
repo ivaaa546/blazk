@@ -3,7 +3,7 @@ import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRo
 import { Link } from "react-router-dom";
 import axios from "axios";
 
-const Articulos = () => {
+const Articulos = () => { 
   const [articulos, setArticulos] = useState([]);
 
   useEffect(() => {
